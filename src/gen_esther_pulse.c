@@ -6,6 +6,8 @@
 #include <unistd.h>
 
 #include "rp.h"
+#include "build_pulse.h"
+
 
 #define MAX_FREQ 125000000
 int main(int argc, char **argv){
@@ -18,15 +20,10 @@ int main(int argc, char **argv){
                 fprintf(stderr, "Rp api init failed!\n");
         }
 
-	int buff_size = 16384;
+	unsigned int buff_size = 16384;
 	float *x = (float *)malloc(buff_size * sizeof(float));
 	// one pulse of width= 980 * 8ns = 7.4 us
-	for (int i = 0; i < buff_size; ++i){
-		if (i> 20 && i<1000) 
-			x[i] = 1.;
-		else
-			x[i] = 0;
-	} 
+	build_pulse(buff_size, 10, 1000, 1000, 4000, x);
 	rp_GenArbWaveform(RP_CH_1, x, buff_size); 
         rp_GenWaveform(RP_CH_1, RP_WAVEFORM_ARBITRARY);
 //        rp_GenFreq(RP_CH_1, 1000000);
@@ -34,13 +31,15 @@ int main(int argc, char **argv){
         rp_GenAmp(RP_CH_1, 1.0);
 
         rp_GenMode(RP_CH_1, RP_GEN_MODE_BURST);
-        rp_GenBurstCount(RP_CH_1, 3);
+        rp_GenBurstCount(RP_CH_1, 1);
         rp_GenBurstRepetitions(RP_CH_1, 2);
-        rp_GenBurstPeriod(RP_CH_1, 20);
+//Set P total time of one burst in in micro seconds. This includes the signal and delay.
+        rp_GenBurstPeriod(RP_CH_1, 500);
         rp_GenTrigger(1);
         sleep(1);
         rp_GenOutEnable(RP_CH_1);
         rp_Release();
+	free(x);
 }
 
 

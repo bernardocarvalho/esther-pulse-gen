@@ -6,8 +6,10 @@
 #include <unistd.h>
 
 #include "rp.h"
+#include "build_pulse.h"
 
 #define MAX_FREQ 125000000
+#define MAX_BUFF_SIZE 16384
 
 int main(int argc, char **argv){
         /* Print error, if rp_Init() function failed */
@@ -15,50 +17,42 @@ int main(int argc, char **argv){
                 fprintf(stderr, "Rp api init failed!\n");
         }
 
-	int buff_size = 16384;
+	int buff_size = MAX_BUFF_SIZE;
 	float *x = (float *)malloc(buff_size * sizeof(float));
 	// one pulse of width= 980 * 8ns = 7.4 us
-	for (int i = 0; i < buff_size; ++i){
-		if (i> 20 && i<1000){ 
-			x[i] = 1.0 * (i - 20)/1000.0;
-		}
-		else if (i> 5020 && i < 6000){
-			x[i] = 1.0 * (i - 5020)/1000.0;
-		}
-		else if (i> 10200 && i < 11000) 
-			x[i] = 1.;
-		else
-			x[i] = 0;
-	} 
+	//1 us = 10 mm @10km/s
+	// lead ~= 1.6 us
+	build_pulse(buff_size, 100, 300, 300, 8000, x);
         rp_GenWaveform(RP_CH_1, RP_WAVEFORM_ARBITRARY);
 	rp_GenArbWaveform(RP_CH_1, x, buff_size); 
 //        rp_GenFreq(RP_CH_1, 1000000);
         rp_GenFreq(RP_CH_1, MAX_FREQ/buff_size); // whole buffer corresponds to ~0.13 ms
         rp_GenAmp(RP_CH_1, 1.0);
 
+	float *x2 = (float *)malloc(buff_size * sizeof(float));
+	// one pulse of width= 980 * 8ns = 7.4 us
+	build_pulse(buff_size, 3750, 300, 300, 2000, x2);
         rp_GenWaveform(RP_CH_2, RP_WAVEFORM_ARBITRARY);
-	rp_GenArbWaveform(RP_CH_2, x, buff_size); 
+	rp_GenArbWaveform(RP_CH_2, x2, buff_size); 
         rp_GenFreq(RP_CH_2, MAX_FREQ/buff_size); // whole buffer corresponds to ~0.13 ms
         rp_GenAmp(RP_CH_2, 1.0);
 
         rp_GenMode(RP_CH_1, RP_GEN_MODE_BURST);
         rp_GenBurstCount(RP_CH_1, 1);
         rp_GenBurstRepetitions(RP_CH_1, 1);
-        rp_GenBurstPeriod(RP_CH_1, 5000);
+        rp_GenBurstPeriod(RP_CH_1, 200);
 
         rp_GenMode(RP_CH_2, RP_GEN_MODE_BURST);
-        rp_GenBurstCount(RP_CH_2, 2);
+        rp_GenBurstCount(RP_CH_2, 1);
         rp_GenBurstRepetitions(RP_CH_2, 1);
-        rp_GenBurstPeriod(RP_CH_2, 5000);
+        rp_GenBurstPeriod(RP_CH_2, 500);
         
         rp_GenOutEnableSync(true);
-        sleep(2);
-        rp_GenTrigger(RP_CH_1);
-        sleep(2);
-        rp_GenTrigger(RP_CH_2);
-        sleep(1);
+        sleep(0.2);
         rp_GenTrigger(3); // Gen trigger on both channels
         rp_Release();
+	free(x);
+	free(x2);
 }
 
 
