@@ -31,7 +31,7 @@ int main(int argc, char **argv){
 
 	float *x2 = (float *)malloc(buff_size * sizeof(float));
 	// one pulse of width= 980 * 8ns = 7.4 us
-	build_pulse(buff_size, 3750, 300, 300, 2000, x2);
+	build_pulse(buff_size, 4750, 300, 300, 2000, x2);
         rp_GenWaveform(RP_CH_2, RP_WAVEFORM_ARBITRARY);
 	rp_GenArbWaveform(RP_CH_2, x2, buff_size); 
         rp_GenFreq(RP_CH_2, MAX_FREQ/buff_size); // whole buffer corresponds to ~0.13 ms
